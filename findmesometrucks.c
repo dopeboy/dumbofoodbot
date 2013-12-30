@@ -4,6 +4,7 @@
 
 #define KORILLA 1
 #define MAMU 2
+#define MOOSHUGRILL 3
 
 IplImage* convertRGBtoHSV(const IplImage *imageRGB);
 IplImage* chop(CvPoint* point, unsigned int numPoints, const IplImage* capture);
@@ -25,7 +26,6 @@ int main(int argc, char *argv[])
 
 	// OK cool, we're in. Let's load the input image. 
  	IplImage* capture = cvLoadImage(argv[1],CV_LOAD_IMAGE_COLOR);
-
 
 	// Let's crop the image to get just the meaningful part of it. These vertices & widths were found manually via GIMP.
 	CvRect cr = {252,170,1222-252,620-170};
@@ -206,13 +206,26 @@ signed int processRegion(const IplImage* region)
 	// Mamu	
 	IplImage* mamu1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
 	IplImage* mamu2 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
-	unsigned int mamu_count = 0;
+	unsigned int mamu_count_blue = 0;
+	unsigned int mamu_count_yellow = 0;
 	
   	cvInRangeS(imgHSV,cvScalar(153,30,110,0),cvScalar(192,77,234,0),mamu1);
 	cvInRangeS(imgHSV,cvScalar(18,16,136,0),cvScalar(38,52,154,0),mamu2);
 
-	mamu_count = cvCountNonZero(mamu1) + cvCountNonZero(mamu2);
-	printf("Mamu count: %d\n", mamu_count);
+	mamu_count_blue = cvCountNonZero(mamu1);
+	mamu_count_yellow = cvCountNonZero(mamu2);
+
+	printf("Mamu count (Blue, Yellow): %d, %d\n", mamu_count_blue, mamu_count_yellow);
+
+	// Moo shu Grill	
+	IplImage* msg = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+
+	unsigned int msg_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(27,56,105,0),cvScalar(35,97,237,0),msg);
+	msg_count = cvCountNonZero(msg);
+	
+	printf("Moo Shuu Grill: %d\n", msg_count);
 
 	signed int match = -1;
 
@@ -226,16 +239,24 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Mamu	
-	else if (mamu_count > 4000)
+	else if (mamu_count_blue > 3500 & mamu_count_yellow > 1000)
 	{
 		printf("Mamu matched.\n");
 		match = MAMU;
+	}
+
+	// Mamu	
+	else if (msg_count > 7000)
+	{
+		printf("Moo Shuu matched.\n");
+		match = MOOSHUGRILL;
 	}
 
     cvReleaseImage(&imgHSV);
     cvReleaseImage(&korilla1);
 	cvReleaseImage(&mamu1);
 	cvReleaseImage(&mamu2);
+	cvReleaseImage(&msg);
 
 	return match;
 }
@@ -265,6 +286,8 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 				strcat(outputString," @KorillaBBQ");
 			else if (status[i] == MAMU)
 				strcat(outputString," @mamuthainoodle");
+			else if (status[i] == MOOSHUGRILL)
+				strcat(outputString," @mooshugrill");
 		}
 	}
 
