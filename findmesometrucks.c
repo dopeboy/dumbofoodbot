@@ -5,6 +5,7 @@
 #define KORILLA 1
 #define MAMU 2
 #define MOOSHUGRILL 3
+#define MEXICOBVLD 4
 
 IplImage* convertRGBtoHSV(const IplImage *imageRGB);
 IplImage* chop(CvPoint* point, unsigned int numPoints, const IplImage* capture);
@@ -227,6 +228,21 @@ signed int processRegion(const IplImage* region)
 	
 	printf("Moo Shuu Grill: %d\n", msg_count);
 
+	// Mexico BVLD
+	IplImage* mexico1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+	IplImage* mexico2 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+
+	unsigned int mexico_yellow_count = 0;
+	unsigned int mexico_black_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(19,45,170,0),cvScalar(27,103,233,0),mexico1);
+	mexico_yellow_count = cvCountNonZero(mexico1);
+
+  	cvInRangeS(imgHSV,cvScalar(0,0,51,0),cvScalar(234,30,127,0),mexico2);
+	mexico_black_count = cvCountNonZero(mexico2);
+	
+	printf("Mexico Bvld Count (black, yellow): %d %d\n", mexico_black_count, mexico_yellow_count);
+
 	signed int match = -1;
 
 	// Now make determinations on whether to match or not
@@ -252,11 +268,20 @@ signed int processRegion(const IplImage* region)
 		match = MOOSHUGRILL;
 	}
 
+	// Mexico	
+	else if (mexico_black_count > 20000 & mexico_yellow_count > 1000)
+	{
+		printf("Mexico Bvld matched.\n");
+		match = MEXICOBVLD;
+	}
+
     cvReleaseImage(&imgHSV);
     cvReleaseImage(&korilla1);
 	cvReleaseImage(&mamu1);
 	cvReleaseImage(&mamu2);
 	cvReleaseImage(&msg);
+	cvReleaseImage(&mexico1);
+	cvReleaseImage(&mexico2);
 
 	return match;
 }
@@ -288,10 +313,12 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 				strcat(outputString," @mamuthainoodle");
 			else if (status[i] == MOOSHUGRILL)
 				strcat(outputString," @mooshugrill");
+			else if (status[i] == MEXICOBVLD)
+				strcat(outputString," @MexicoBlvd");
 		}
 	}
 
-	strcat(outputString," in @dumbolot.");
+	strcat(outputString," in the @dumbolot.");
 
 	printf("output: %s\n",outputString);
 
