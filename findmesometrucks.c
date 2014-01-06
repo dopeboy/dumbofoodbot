@@ -6,6 +6,7 @@
 #define MAMU 2
 #define MOOSHUGRILL 3
 #define MEXICOBVLD 4
+#define HIBACHIHEAVEN 5
 
 IplImage* convertRGBtoHSV(const IplImage *imageRGB);
 IplImage* chop(CvPoint* point, unsigned int numPoints, const IplImage* capture);
@@ -35,31 +36,32 @@ int main(int argc, char *argv[])
 	cvCopy( capture, cropped, 0 );
 
 	//cropped = cvLoadImage("a.png",CV_LOAD_IMAGE_COLOR);
-
+	if (debug == 1)
+{
+int p[3];
+    p[0] = CV_IMWRITE_JPEG_QUALITY;
+    p[1] = 100;
+    p[2] = 0;
+		cvSaveImage( "lot_capture_cropped.jpg", cropped, p );
+}
 	// Now chop it into three regions. Each region represents a parking spot. These vertices were also found manually via gimp.
 	unsigned int numPoints = 0;
 
 	// R0 (Southern most spot)
-	numPoints = 6;
+	numPoints = 4;
 	CvPoint points_r1[numPoints];
 
-	points_r1[0].x=21;
-	points_r1[0].y=43;
+	points_r1[0].x=25;
+	points_r1[0].y=25;
 
-	points_r1[1].x=112;
-	points_r1[1].y=72;
+	points_r1[1].x=235;
+	points_r1[1].y=25;
 
-	points_r1[2].x=342;
-	points_r1[2].y=33;
+	points_r1[2].x=235;
+	points_r1[2].y=211;
 
-	points_r1[3].x=353;
-	points_r1[3].y=204;
-
-	points_r1[4].x=98;
-	points_r1[4].y=261;
-
-	points_r1[5].x=9;
-	points_r1[5].y=242;
+	points_r1[3].x=9;
+	points_r1[3].y=242;
 
 	IplImage* region0 = chop(&points_r1[0], numPoints, cropped);
 
@@ -70,10 +72,10 @@ int main(int argc, char *argv[])
 	points_r2[0].x=519;
 	points_r2[0].y=261;
 
-	points_r2[1].x=343;
+	points_r2[1].x=235;
 	points_r2[1].y=219;
 
-	points_r2[2].x=345;
+	points_r2[2].x=238;
 	points_r2[2].y=42;
 
 	points_r2[3].x=756;
@@ -225,6 +227,8 @@ signed int processRegion(const IplImage* region)
 
   	cvInRangeS(imgHSV,cvScalar(27,56,105,0),cvScalar(35,97,237,0),msg);
 	msg_count = cvCountNonZero(msg);
+
+
 	
 	printf("Moo Shuu Grill: %d\n", msg_count);
 
@@ -243,6 +247,26 @@ signed int processRegion(const IplImage* region)
 	
 	printf("Mexico Bvld Count (black, yellow): %d %d\n", mexico_black_count, mexico_yellow_count);
 
+	// Hibachi Heaven
+	IplImage* hibachi1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+	IplImage* hibachi2 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+	IplImage* hibachi3 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+
+	unsigned int hibachi_red_count = 0;
+	unsigned int hibachi_gray_count = 0;
+	unsigned int hibachi_yellow_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(1,81,166,0),cvScalar(253,167,213,0),hibachi1);
+	hibachi_red_count = cvCountNonZero(hibachi1);
+
+  	cvInRangeS(imgHSV,cvScalar(177,46,40,0),cvScalar(224,79,154,0),hibachi2);
+	hibachi_gray_count = cvCountNonZero(hibachi2);
+
+  	cvInRangeS(imgHSV,cvScalar(12,85,140,0),cvScalar(24,132,200,0),hibachi3);
+	hibachi_yellow_count = cvCountNonZero(hibachi3);
+
+	printf("Hibachi Count (red, gray, yellow): %d %d %d\n", hibachi_red_count, hibachi_gray_count, hibachi_yellow_count);
+
 	signed int match = -1;
 
 	// Now make determinations on whether to match or not
@@ -255,7 +279,7 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Mamu	
-	else if (mamu_count_blue > 3500 & mamu_count_yellow > 1000)
+	else if (mamu_count_blue > 3500 && mamu_count_yellow > 1000)
 	{
 		printf("Mamu matched.\n");
 		match = MAMU;
@@ -269,10 +293,17 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Mexico	
-	else if (mexico_black_count > 20000 & mexico_yellow_count > 1000)
+	else if (mexico_black_count > 20000 && mexico_yellow_count > 1000)
 	{
 		printf("Mexico Bvld matched.\n");
 		match = MEXICOBVLD;
+	}
+
+	// Hibachi Heaven
+	else if (hibachi_red_count > 1500 && hibachi_gray_count > 6000 && hibachi_yellow_count > 300)
+	{
+		printf("Hibachi Heaven matched.\n");
+		match = HIBACHIHEAVEN;
 	}
 
     cvReleaseImage(&imgHSV);
@@ -282,6 +313,9 @@ signed int processRegion(const IplImage* region)
 	cvReleaseImage(&msg);
 	cvReleaseImage(&mexico1);
 	cvReleaseImage(&mexico2);
+	cvReleaseImage(&hibachi1);
+	cvReleaseImage(&hibachi2);
+	cvReleaseImage(&hibachi3);
 
 	return match;
 }
@@ -294,7 +328,7 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 
 	char tterCommand[300];
 	char* tterEnd = "\"";
-	strcpy(tterCommand,"~/./ttytter.pl -status=\"");
+	strcpy(tterCommand,"ttytter -status=\"");
 
 	// If all the regions were empty, say so and bail
 	if (region0_status == -1 && region1_status == -1 && region2_status == -1)
@@ -315,6 +349,8 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 				strcat(outputString," @mooshugrill");
 			else if (status[i] == MEXICOBVLD)
 				strcat(outputString," @MexicoBlvd");
+			else if (status[i] == HIBACHIHEAVEN)
+				strcat(outputString," @hibachiheaven");
 		}
 	}
 
