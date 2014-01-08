@@ -2,11 +2,13 @@
 #include "cv.h"
 #include <opencv2/highgui/highgui.hpp>
 
-#define KORILLA 1
-#define MAMU 2
-#define MOOSHUGRILL 3
-#define MEXICOBVLD 4
-#define HIBACHIHEAVEN 5
+#define KORILLA 0
+#define MAMU 1
+#define MOOSHUGRILL 2
+#define MEXICOBVLD 3
+#define HIBACHIHEAVEN 4
+#define YOUGOTSMOKED 5
+#define SHORTYS 6
 
 IplImage* convertRGBtoHSV(const IplImage *imageRGB);
 IplImage* chop(CvPoint* point, unsigned int numPoints, const IplImage* capture);
@@ -227,8 +229,6 @@ signed int processRegion(const IplImage* region)
 
   	cvInRangeS(imgHSV,cvScalar(27,56,105,0),cvScalar(35,97,237,0),msg);
 	msg_count = cvCountNonZero(msg);
-
-
 	
 	printf("Moo Shuu Grill: %d\n", msg_count);
 
@@ -267,6 +267,29 @@ signed int processRegion(const IplImage* region)
 
 	printf("Hibachi Count (red, gray, yellow): %d %d %d\n", hibachi_red_count, hibachi_gray_count, hibachi_yellow_count);
 
+	// You got smoked
+	IplImage* ygs = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+	unsigned int ygs_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(26,56,50,0),cvScalar(57,140,200,0),ygs);
+	ygs_count = cvCountNonZero(ygs);
+	printf("You got smoked count: %d\n", ygs_count);
+
+	// Shorty's
+	IplImage* shty1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+	IplImage* shty2 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+	
+	unsigned int shty_red_count = 0;
+	unsigned int shty_white_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(4,7,80,0),cvScalar(234,40,95,0),shty1);
+	shty_red_count = cvCountNonZero(shty1);
+
+  	cvInRangeS(imgHSV,cvScalar(38,20,126,0),cvScalar(161,91,152,0),shty2);
+	shty_white_count = cvCountNonZero(shty2);
+
+	printf("Shorty's count (red, white): %d %d\n", shty_red_count, shty_white_count);
+
 	signed int match = -1;
 
 	// Now make determinations on whether to match or not
@@ -279,13 +302,13 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Mamu	
-	else if (mamu_count_blue > 3500 && mamu_count_yellow > 1000)
+	else if (mamu_count_blue > 3500 && mamu_count_yellow > 2000)
 	{
 		printf("Mamu matched.\n");
 		match = MAMU;
 	}
 
-	// Mamu	
+	// Mooshu Grill	
 	else if (msg_count > 7000)
 	{
 		printf("Moo Shuu matched.\n");
@@ -306,6 +329,20 @@ signed int processRegion(const IplImage* region)
 		match = HIBACHIHEAVEN;
 	}
 
+	// You got smoked
+	else if (ygs_count > 12000)
+	{
+		printf("You got smoked matched.\n");
+		match = YOUGOTSMOKED;
+	}
+
+	// Shorty's
+	else if (shty_red_count > 6000 && shty_white_count > 9000)
+	{
+		printf("Shorty's matched.\n");
+		match = SHORTYS;
+	}
+
     cvReleaseImage(&imgHSV);
     cvReleaseImage(&korilla1);
 	cvReleaseImage(&mamu1);
@@ -316,6 +353,9 @@ signed int processRegion(const IplImage* region)
 	cvReleaseImage(&hibachi1);
 	cvReleaseImage(&hibachi2);
 	cvReleaseImage(&hibachi3);
+	cvReleaseImage(&ygs);
+	cvReleaseImage(&shty1);
+	cvReleaseImage(&shty2);
 
 	return match;
 }
@@ -351,6 +391,10 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 				strcat(outputString," @MexicoBlvd");
 			else if (status[i] == HIBACHIHEAVEN)
 				strcat(outputString," @hibachiheaven");
+			else if (status[i] == YOUGOTSMOKED)
+				strcat(outputString," @YouGotSmoked");
+			else if (status[i] == SHORTYS)
+				strcat(outputString," @shortysnyc");
 		}
 	}
 
