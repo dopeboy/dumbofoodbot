@@ -204,9 +204,11 @@ signed int processRegion(const IplImage* region)
 	IplImage* korilla1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
 	unsigned int korilla_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(8,132,106,0),cvScalar(16,192,255,0),korilla1);
+  	cvInRangeS(imgHSV,cvScalar(8,126,0,0),cvScalar(16,192,255,0),korilla1);
 	korilla_count = cvCountNonZero(korilla1);
 	printf("Korilla count: %d\n", korilla_count);
+
+
 
 	// Mamu	
 	IplImage* mamu1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
@@ -239,10 +241,10 @@ signed int processRegion(const IplImage* region)
 	unsigned int mexico_yellow_count = 0;
 	unsigned int mexico_black_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(19,45,170,0),cvScalar(27,103,233,0),mexico1);
+  	cvInRangeS(imgHSV,cvScalar(19,45,80,0),cvScalar(27,103,233,0),mexico1);
 	mexico_yellow_count = cvCountNonZero(mexico1);
-
-  	cvInRangeS(imgHSV,cvScalar(0,0,51,0),cvScalar(234,30,127,0),mexico2);
+//cvInRangeS(imgHSV,cvScalar(0,0,51,0),cvScalar(234,94,127,0),mexico2);
+  	cvInRangeS(imgHSV,cvScalar(0,0,51,0),cvScalar(234,40,127,0),mexico2);
 	mexico_black_count = cvCountNonZero(mexico2);
 	
 	printf("Mexico Bvld Count (black, yellow): %d %d\n", mexico_black_count, mexico_yellow_count);
