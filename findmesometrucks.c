@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "cv.h"
+#include "findmesometrucks.h"
 #include <opencv2/highgui/highgui.hpp>
 
 #define KORILLA 0
@@ -9,11 +10,7 @@
 #define HIBACHIHEAVEN 4
 #define YOUGOTSMOKED 5
 #define SHORTYS 6
-
-IplImage* convertRGBtoHSV(const IplImage *imageRGB);
-IplImage* chop(CvPoint* point, unsigned int numPoints, const IplImage* capture);
-signed int processRegion(const IplImage* region);
-void analyzeRegions(signed int region0_status, signed int region1_status, signed int region2_status);
+#define PALENQUE 7
 
 unsigned int debug = 0;
 
@@ -39,13 +36,14 @@ int main(int argc, char *argv[])
 
 	//cropped = cvLoadImage("a.png",CV_LOAD_IMAGE_COLOR);
 	if (debug == 1)
-{
-int p[3];
-    p[0] = CV_IMWRITE_JPEG_QUALITY;
-    p[1] = 100;
-    p[2] = 0;
+	{
+		int p[3];
+	    p[0] = CV_IMWRITE_JPEG_QUALITY;
+    	p[1] = 100;
+    	p[2] = 0;
 		cvSaveImage( "lot_capture_cropped.jpg", cropped, p );
-}
+	}
+
 	// Now chop it into three regions. Each region represents a parking spot. These vertices were also found manually via gimp.
 	unsigned int numPoints = 0;
 
@@ -216,11 +214,13 @@ signed int processRegion(const IplImage* region)
 	unsigned int mamu_count_blue = 0;
 	unsigned int mamu_count_yellow = 0;
 	
-  	cvInRangeS(imgHSV,cvScalar(153,30,110,0),cvScalar(192,77,234,0),mamu1);
-	cvInRangeS(imgHSV,cvScalar(18,16,136,0),cvScalar(38,52,154,0),mamu2);
+  	cvInRangeS(imgHSV,cvScalar(153,30,102,0),cvScalar(192,128,234,0),mamu1);
+	cvInRangeS(imgHSV,cvScalar(18,16,136,0),cvScalar(38,52,250,0),mamu2);
 
 	mamu_count_blue = cvCountNonZero(mamu1);
 	mamu_count_yellow = cvCountNonZero(mamu2);
+
+
 
 	printf("Mamu count (Blue, Yellow): %d, %d\n", mamu_count_blue, mamu_count_yellow);
 
@@ -243,10 +243,9 @@ signed int processRegion(const IplImage* region)
 
   	cvInRangeS(imgHSV,cvScalar(19,45,80,0),cvScalar(27,103,233,0),mexico1);
 	mexico_yellow_count = cvCountNonZero(mexico1);
-//cvInRangeS(imgHSV,cvScalar(0,0,51,0),cvScalar(234,94,127,0),mexico2);
-  	cvInRangeS(imgHSV,cvScalar(0,0,51,0),cvScalar(234,40,127,0),mexico2);
+  	cvInRangeS(imgHSV,cvScalar(0,0,45,0),cvScalar(191,70,127,0),mexico2);
 	mexico_black_count = cvCountNonZero(mexico2);
-	
+
 	printf("Mexico Bvld Count (black, yellow): %d %d\n", mexico_black_count, mexico_yellow_count);
 
 	// Hibachi Heaven
@@ -258,7 +257,7 @@ signed int processRegion(const IplImage* region)
 	unsigned int hibachi_gray_count = 0;
 	unsigned int hibachi_yellow_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(1,81,166,0),cvScalar(253,167,213,0),hibachi1);
+  	cvInRangeS(imgHSV,cvScalar(1,81,126,0),cvScalar(253,167,213,0),hibachi1);
 	hibachi_red_count = cvCountNonZero(hibachi1);
 
   	cvInRangeS(imgHSV,cvScalar(177,46,40,0),cvScalar(224,79,154,0),hibachi2);
@@ -292,6 +291,16 @@ signed int processRegion(const IplImage* region)
 
 	printf("Shorty's count (red, white): %d %d\n", shty_red_count, shty_white_count);
 
+	// Palenque
+	IplImage* palenque1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+
+	unsigned int palenque_blue_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(151,85,59,0),cvScalar(179,161,208,0),palenque1);
+	palenque_blue_count = cvCountNonZero(palenque1);
+
+	printf("Palenque (blue): %d\n", palenque_blue_count);
+
 	signed int match = -1;
 
 	// Now make determinations on whether to match or not
@@ -316,9 +325,9 @@ signed int processRegion(const IplImage* region)
 		printf("Moo Shuu matched.\n");
 		match = MOOSHUGRILL;
 	}
-
+	
 	// Mexico	
-	else if (mexico_black_count > 20000 && mexico_yellow_count > 1000)
+	else if (mexico_black_count > 25000 && mexico_yellow_count > 1000)
 	{
 		printf("Mexico Bvld matched.\n");
 		match = MEXICOBVLD;
@@ -345,6 +354,13 @@ signed int processRegion(const IplImage* region)
 		match = SHORTYS;
 	}
 
+	// Palenque
+	else if (palenque_blue_count > 5000)
+	{
+		printf("Palenque matched.\n");
+		match = PALENQUE;
+	}
+
     cvReleaseImage(&imgHSV);
     cvReleaseImage(&korilla1);
 	cvReleaseImage(&mamu1);
@@ -358,6 +374,7 @@ signed int processRegion(const IplImage* region)
 	cvReleaseImage(&ygs);
 	cvReleaseImage(&shty1);
 	cvReleaseImage(&shty2);
+	cvReleaseImage(&palenque1);
 
 	return match;
 }
@@ -397,6 +414,8 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 				strcat(outputString," @YouGotSmoked");
 			else if (status[i] == SHORTYS)
 				strcat(outputString," @shortysnyc");
+			else if (status[i] == PALENQUE)
+				strcat(outputString," @Palenquefood");
 		}
 	}
 
