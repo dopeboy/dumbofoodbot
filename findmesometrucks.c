@@ -11,6 +11,8 @@
 #define YOUGOTSMOKED 5
 #define SHORTYS 6
 #define PALENQUE 7
+#define KIMCHITACO 8
+#define SWEETCHILINYC 9
 
 unsigned int debug = 0;
 
@@ -283,13 +285,16 @@ signed int processRegion(const IplImage* region)
 	unsigned int shty_red_count = 0;
 	unsigned int shty_white_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(4,7,80,0),cvScalar(234,40,95,0),shty1);
+  	cvInRangeS(imgHSV,cvScalar(2,20,80,0),cvScalar(234,55,131,0),shty1);
 	shty_red_count = cvCountNonZero(shty1);
 
-  	cvInRangeS(imgHSV,cvScalar(38,20,126,0),cvScalar(161,91,152,0),shty2);
+
+
+  	cvInRangeS(imgHSV,cvScalar(0,0,238,0),cvScalar(191,15,255,0),shty2);
 	shty_white_count = cvCountNonZero(shty2);
 
 	printf("Shorty's count (red, white): %d %d\n", shty_red_count, shty_white_count);
+
 
 	// Palenque
 	IplImage* palenque1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
@@ -300,6 +305,26 @@ signed int processRegion(const IplImage* region)
 	palenque_blue_count = cvCountNonZero(palenque1);
 
 	printf("Palenque (blue): %d\n", palenque_blue_count);
+
+	// Kimchi Taco
+	IplImage* kimchitaco1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+
+	unsigned int kimchitaco_red_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(0,129,82,0),cvScalar(254,192,144,0),kimchitaco1);
+	kimchitaco_red_count = cvCountNonZero(kimchitaco1);
+
+	printf("Kimchi Taco (red): %d\n", kimchitaco_red_count);
+
+	// Sweet Chili
+	IplImage* sweetchili1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+
+	unsigned int sweetchili_gray_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(170,8,31,0),cvScalar(237,49,104,0),sweetchili1);
+	sweetchili_gray_count = cvCountNonZero(sweetchili1);
+
+	printf("Sweet Chili (gray): %d\n", sweetchili_gray_count);
 
 	signed int match = -1;
 
@@ -348,7 +373,7 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Shorty's
-	else if (shty_red_count > 6000 && shty_white_count > 9000)
+	else if (shty_red_count > 6000 && shty_white_count > 7000)
 	{
 		printf("Shorty's matched.\n");
 		match = SHORTYS;
@@ -359,6 +384,20 @@ signed int processRegion(const IplImage* region)
 	{
 		printf("Palenque matched.\n");
 		match = PALENQUE;
+	}
+
+	// Kimchi Taco Truck
+	else if (kimchitaco_red_count > 6000)
+	{
+		printf("Kimchi Taco matched.\n");
+		match = KIMCHITACO;
+	}
+
+	// Sweet Chili
+	else if (sweetchili_gray_count > 7000)
+	{
+		printf("Sweet Chili matched.\n");
+		match = SWEETCHILINYC;
 	}
 
     cvReleaseImage(&imgHSV);
@@ -375,6 +414,8 @@ signed int processRegion(const IplImage* region)
 	cvReleaseImage(&shty1);
 	cvReleaseImage(&shty2);
 	cvReleaseImage(&palenque1);
+	cvReleaseImage(&kimchitaco1);
+	cvReleaseImage(&sweetchili1);
 
 	return match;
 }
@@ -387,7 +428,7 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 
 	char tterCommand[300];
 	char* tterEnd = "\"";
-	strcpy(tterCommand,"ttytter -status=\"");
+	strcpy(tterCommand,"./ttytter.pl -status=\"");
 
 	// If all the regions were empty, say so and bail
 	if (region0_status == -1 && region1_status == -1 && region2_status == -1)
@@ -416,6 +457,10 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 				strcat(outputString," @shortysnyc");
 			else if (status[i] == PALENQUE)
 				strcat(outputString," @Palenquefood");
+			else if (status[i] == KIMCHITACO)
+				strcat(outputString," @KimchiTruck");
+			else if (status[i] == SWEETCHILINYC)
+				strcat(outputString," @sweetchilinyc");
 		}
 	}
 
