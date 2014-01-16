@@ -11,7 +11,7 @@
 #define YOUGOTSMOKED 5
 #define SHORTYS 6
 #define PALENQUE 7
-#define KIMCHITACO 8
+#define TOUM 8
 #define SWEETCHILINYC 9
 
 unsigned int debug = 0;
@@ -306,15 +306,19 @@ signed int processRegion(const IplImage* region)
 
 	printf("Palenque (blue): %d\n", palenque_blue_count);
 
-	// Kimchi Taco
-	IplImage* kimchitaco1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+	// Toum
+	IplImage* toum1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
 
-	unsigned int kimchitaco_red_count = 0;
+	unsigned int toum_red_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(0,129,82,0),cvScalar(254,192,144,0),kimchitaco1);
-	kimchitaco_red_count = cvCountNonZero(kimchitaco1);
+  	cvInRangeS(imgHSV,cvScalar(0,157,30,0),cvScalar(4,208,135,0),toum1);
+	toum_red_count = cvCountNonZero(toum1);
 
-	printf("Kimchi Taco (red): %d\n", kimchitaco_red_count);
+	printf("Toum (red): %d\n", toum_red_count);
+
+    cvNamedWindow("opencvtest",CV_WINDOW_AUTOSIZE);
+    cvShowImage("opencvtest",toum1);
+    cvWaitKey(0);
 
 	// Sweet Chili
 	IplImage* sweetchili1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
@@ -386,11 +390,11 @@ signed int processRegion(const IplImage* region)
 		match = PALENQUE;
 	}
 
-	// Kimchi Taco Truck
-	else if (kimchitaco_red_count > 6000)
+	// Toum
+	else if (toum_red_count > 2500)
 	{
-		printf("Kimchi Taco matched.\n");
-		match = KIMCHITACO;
+		printf("Toum matched.\n");
+		match = TOUM;
 	}
 
 	// Sweet Chili
@@ -414,7 +418,7 @@ signed int processRegion(const IplImage* region)
 	cvReleaseImage(&shty1);
 	cvReleaseImage(&shty2);
 	cvReleaseImage(&palenque1);
-	cvReleaseImage(&kimchitaco1);
+	cvReleaseImage(&toum1);
 	cvReleaseImage(&sweetchili1);
 
 	return match;
@@ -457,8 +461,8 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 				strcat(outputString," @shortysnyc");
 			else if (status[i] == PALENQUE)
 				strcat(outputString," @Palenquefood");
-			else if (status[i] == KIMCHITACO)
-				strcat(outputString," @KimchiTruck");
+			else if (status[i] == TOUM)
+				strcat(outputString," @ToumNYC");
 			else if (status[i] == SWEETCHILINYC)
 				strcat(outputString," @sweetchilinyc");
 		}
