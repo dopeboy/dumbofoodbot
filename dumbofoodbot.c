@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include "cv.h"
-#include "findmesometrucks.h"
+#include "dumbofoodbot.h"
+#include <time.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define KORILLA 0
 #define MAMU 1
@@ -14,113 +17,171 @@
 #define TOUM 8
 #define SWEETCHILINYC 9
 
-unsigned int debug = 0;
+// 0 = just chop
+// 1 = chop and detect
+// 2 = chop & detect & tweet
+unsigned int mode = 0;
 
 int main(int argc, char *argv[])
 {
 	if (argc != 3)
 	{
-	    printf("usage: ./findmesometrucks <image> <debug_mode>\n");
+	    printf("usage: ./dumbofoodbot <cropped_image> <mode>\n");
 	    exit(0);
 	}
 
-	// debug mode?
-	debug = atoi(argv[2]);
+	// mode?
+	mode = atoi(argv[2]);
+
+	// Calculate the datetime so we save stuff our work to the right folder
+	time_t rawtime;
+	struct tm * timeinfo;
+
+	time ( &rawtime );
+	timeinfo = localtime ( &rawtime );
+
+	int month = timeinfo->tm_mon+1;
+	int day = timeinfo->tm_mday;
+	int year = timeinfo->tm_year+1900;
+
+	char folder[10];
+	char file[100];
+	sprintf(folder, "%d_%d_%d", month,day,year);
 
 	// OK cool, we're in. Let's load the input image. 
  	IplImage* capture = cvLoadImage(argv[1],CV_LOAD_IMAGE_COLOR);
-
+	
 	// Let's crop the image to get just the meaningful part of it. These vertices & widths were found manually via GIMP.
-	CvRect cr = {252,170,1222-252,620-170};
+	CvRect cr = {72,304,963-72,707-304};
 	cvSetImageROI(capture, cr);
 	IplImage* cropped = cvCreateImage( cvSize(cr.width,cr.height), capture->depth, capture->nChannels );
 	cvCopy( capture, cropped, 0 );
 
-	//cropped = cvLoadImage("a.png",CV_LOAD_IMAGE_COLOR);
-	if (debug == 1)
+	// Save it to mm_dd_yy/lot_capture_cropped.jpg
+	int fileparam[3] = {CV_IMWRITE_JPEG_QUALITY,100,0};
+	mkdir(folder,  S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	strcpy(file, folder);
+	strcat(file,"/lot_capture_cropped.jpg");
+	cvSaveImage(file, cropped, fileparam);
+
+	IplImage* region0 = NULL;
+	IplImage* region1 = NULL;
+	IplImage* region2 = NULL; 
+
+	// Just chop and save to file
+	if (mode == 0 || mode == 1 || mode == 2)
 	{
-		int p[3];
-	    p[0] = CV_IMWRITE_JPEG_QUALITY;
-    	p[1] = 100;
-    	p[2] = 0;
-		cvSaveImage( "lot_capture_cropped.jpg", cropped, p );
+		// Now chop it into three regions. Each region represents a parking spot. These vertices were also found manually via gimp.
+		unsigned int numPoints = 0;
+
+		// R0 (lower left)
+		numPoints = 6;
+		CvPoint points_r0[numPoints];
+
+		points_r0[0].x=0;
+		points_r0[0].y=12;
+
+		points_r0[1].x=80;
+		points_r0[1].y=12;
+
+		points_r0[2].x=201;
+		points_r0[2].y=34;
+
+		points_r0[3].x=201;
+		points_r0[3].y=182;
+
+		points_r0[4].x=21;
+		points_r0[4].y=226;
+
+		points_r0[5].x=0;
+		points_r0[5].y=183;
+
+		region0 = chop(&points_r0[0], numPoints, cropped);
+		memset(file,0,strlen(file));
+		strcpy(file, folder);
+		strcat(file,"/lot_capture_r0.jpg");
+		cvSaveImage(file, region0, fileparam);
+
+		// R1 (middle)
+		numPoints = 6;
+		CvPoint points_r1[numPoints];
+
+		points_r1[0].x=234;
+		points_r1[0].y=20;
+
+		points_r1[1].x=346;
+		points_r1[1].y=20;
+
+		points_r1[2].x=600;
+		points_r1[2].y=86;
+
+		points_r1[3].x=600;
+		points_r1[3].y=153;
+
+		points_r1[4].x=524;
+		points_r1[4].y=286;
+
+		points_r1[5].x=234;
+		points_r1[5].y=213;
+
+		region1 = chop(&points_r1[0], numPoints, cropped);
+		memset(file,0,strlen(file));
+		strcpy(file, folder);
+		strcat(file,"/lot_capture_r1.jpg");
+		cvSaveImage(file, region1, fileparam);
+
+		// R2 (lower right)
+		numPoints = 7;
+		CvPoint points_r2[numPoints];
+
+		points_r2[0].x=751;
+		points_r2[0].y=117;
+
+		points_r2[1].x=882;
+		points_r2[1].y=145;
+
+		points_r2[2].x=882;
+		points_r2[2].y=238;
+
+		points_r2[3].x=474;
+		points_r2[3].y=397;
+
+		points_r2[4].x=474;
+		points_r2[4].y=336;
+
+		points_r2[5].x=563;
+		points_r2[5].y=166;
+
+		// This last vertex needs some work.
+		points_r2[6].x=697;
+		points_r2[6].y=117;
+
+		region2 = chop(&points_r2[0], numPoints, cropped);
+		memset(file,0,strlen(file));
+		strcpy(file, folder);
+		strcat(file,"/lot_capture_r2.jpg");
+		cvSaveImage(file, region2, fileparam);
+
+
 	}
 
-	// Now chop it into three regions. Each region represents a parking spot. These vertices were also found manually via gimp.
-	unsigned int numPoints = 0;
+	if (mode == 1 || mode == 2)
+	{
+		// OK, we got all the cropped regions now. Now let's run each region through the color detection algorithm to find what truck is in each region
+		printf("*** REGION 0 *** \n");
+		signed int region0_status = processRegion(region0);
+		printf("\n");
 
-	// R0 (Southern most spot)
-	numPoints = 4;
-	CvPoint points_r1[numPoints];
+		printf("*** REGION 1 *** \n");
+		signed int region1_status = processRegion(region1);
 
-	points_r1[0].x=25;
-	points_r1[0].y=25;
+		printf("\n");
+		printf("*** REGION 2 *** \n");
+		signed int region2_status = processRegion(region2);
+		printf("\n");
 
-	points_r1[1].x=235;
-	points_r1[1].y=25;
-
-	points_r1[2].x=235;
-	points_r1[2].y=211;
-
-	points_r1[3].x=9;
-	points_r1[3].y=242;
-
-	IplImage* region0 = chop(&points_r1[0], numPoints, cropped);
-
-	// R1 (middle spot)
-	numPoints = 5;
-	CvPoint points_r2[numPoints];
-
-	points_r2[0].x=519;
-	points_r2[0].y=261;
-
-	points_r2[1].x=235;
-	points_r2[1].y=219;
-
-	points_r2[2].x=238;
-	points_r2[2].y=42;
-
-	points_r2[3].x=756;
-	points_r2[3].y=140;
-
-	points_r2[4].x=541;
-	points_r2[4].y=199;
-
-	IplImage* region1 = chop(&points_r2[0], numPoints, cropped);
-
-	// R2 (southernmost spot)
-	numPoints = 6;
-	CvPoint points_r3[numPoints];
-
-	points_r3[0].x=505;
-	points_r3[0].y=419;
-
-	points_r3[1].x=891;
-	points_r3[1].y=273;
-
-	points_r3[2].x=903;
-	points_r3[2].y=171;
-
-	points_r3[3].x=745;
-	points_r3[3].y=128;
-
-	points_r3[4].x=545;
-	points_r3[4].y=188;
-
-	points_r3[5].x=444;
-	points_r3[5].y=385;
-
-	IplImage* region2 = chop(&points_r3[0], numPoints, cropped);
-
-	// OK, we got all the cropped regions now. Now let's run each region through the color detection algorithm to find what truck is in each region
-	signed int region0_status = processRegion(region0);
-	printf("\n");
-	signed int region1_status = processRegion(region1);
-	printf("\n");
-	signed int region2_status = processRegion(region2);
-	printf("\n");
-		
-	analyzeRegions(region0_status, region1_status, region2_status);
+		analyzeRegions(region0_status, region1_status, region2_status);
+	}
 
 	// Mother always said we should clean up after ourselves.
     cvReleaseImage(&capture);
@@ -204,11 +265,9 @@ signed int processRegion(const IplImage* region)
 	IplImage* korilla1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
 	unsigned int korilla_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(8,126,0,0),cvScalar(16,192,255,0),korilla1);
+  	cvInRangeS(imgHSV,cvScalar(3,76,67,0),cvScalar(16,155,121,0),korilla1);
 	korilla_count = cvCountNonZero(korilla1);
 	printf("Korilla count: %d\n", korilla_count);
-
-
 
 	// Mamu	
 	IplImage* mamu1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
@@ -221,8 +280,6 @@ signed int processRegion(const IplImage* region)
 
 	mamu_count_blue = cvCountNonZero(mamu1);
 	mamu_count_yellow = cvCountNonZero(mamu2);
-
-
 
 	printf("Mamu count (Blue, Yellow): %d, %d\n", mamu_count_blue, mamu_count_yellow);
 
@@ -243,9 +300,9 @@ signed int processRegion(const IplImage* region)
 	unsigned int mexico_yellow_count = 0;
 	unsigned int mexico_black_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(19,45,80,0),cvScalar(27,103,233,0),mexico1);
+  	cvInRangeS(imgHSV,cvScalar(0,7,110,0),cvScalar(49,74,165,0),mexico1);
 	mexico_yellow_count = cvCountNonZero(mexico1);
-  	cvInRangeS(imgHSV,cvScalar(0,0,45,0),cvScalar(191,70,127,0),mexico2);
+  	cvInRangeS(imgHSV,cvScalar(18,8,51,0),cvScalar(234,77,84,0),mexico2);
 	mexico_black_count = cvCountNonZero(mexico2);
 
 	printf("Mexico Bvld Count (black, yellow): %d %d\n", mexico_black_count, mexico_yellow_count);
@@ -288,13 +345,10 @@ signed int processRegion(const IplImage* region)
   	cvInRangeS(imgHSV,cvScalar(2,20,80,0),cvScalar(234,55,131,0),shty1);
 	shty_red_count = cvCountNonZero(shty1);
 
-
-
   	cvInRangeS(imgHSV,cvScalar(0,0,238,0),cvScalar(191,15,255,0),shty2);
 	shty_white_count = cvCountNonZero(shty2);
 
 	printf("Shorty's count (red, white): %d %d\n", shty_red_count, shty_white_count);
-
 
 	// Palenque
 	IplImage* palenque1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
@@ -311,14 +365,10 @@ signed int processRegion(const IplImage* region)
 
 	unsigned int toum_red_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(0,157,30,0),cvScalar(4,208,135,0),toum1);
+  	cvInRangeS(imgHSV,cvScalar(0,112,56,0),cvScalar(254,177,122,0),toum1);
 	toum_red_count = cvCountNonZero(toum1);
 
 	printf("Toum (red): %d\n", toum_red_count);
-
-    cvNamedWindow("opencvtest",CV_WINDOW_AUTOSIZE);
-    cvShowImage("opencvtest",toum1);
-    cvWaitKey(0);
 
 	// Sweet Chili
 	IplImage* sweetchili1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
@@ -334,11 +384,11 @@ signed int processRegion(const IplImage* region)
 
 	// Now make determinations on whether to match or not
 
-	// Korilla
-	if (korilla_count > 5000)
+	// Hibachi Heaven
+	if (hibachi_red_count > 1500 && hibachi_gray_count > 6000 && hibachi_yellow_count > 300)
 	{
-		printf("Korilla matched.\n");
-		match = KORILLA;
+		printf("Hibachi Heaven matched.\n");
+		match = HIBACHIHEAVEN;
 	}
 
 	// Mamu	
@@ -348,32 +398,11 @@ signed int processRegion(const IplImage* region)
 		match = MAMU;
 	}
 
-	// Mooshu Grill	
-	else if (msg_count > 7000)
-	{
-		printf("Moo Shuu matched.\n");
-		match = MOOSHUGRILL;
-	}
-	
 	// Mexico	
-	else if (mexico_black_count > 25000 && mexico_yellow_count > 1000)
+	else if (mexico_black_count > 20000 && mexico_yellow_count > 2000)
 	{
 		printf("Mexico Bvld matched.\n");
 		match = MEXICOBVLD;
-	}
-
-	// Hibachi Heaven
-	else if (hibachi_red_count > 1500 && hibachi_gray_count > 6000 && hibachi_yellow_count > 300)
-	{
-		printf("Hibachi Heaven matched.\n");
-		match = HIBACHIHEAVEN;
-	}
-
-	// You got smoked
-	else if (ygs_count > 12000)
-	{
-		printf("You got smoked matched.\n");
-		match = YOUGOTSMOKED;
 	}
 
 	// Shorty's
@@ -381,6 +410,27 @@ signed int processRegion(const IplImage* region)
 	{
 		printf("Shorty's matched.\n");
 		match = SHORTYS;
+	}
+
+	// Korilla
+	else if (korilla_count > 5000)
+	{
+		printf("Korilla matched.\n");
+		match = KORILLA;
+	}
+
+	// Mooshu Grill	
+	else if (msg_count > 7000)
+	{
+		printf("Moo Shuu matched.\n");
+		match = MOOSHUGRILL;
+	}
+
+	// You got smoked
+	else if (ygs_count > 12000)
+	{
+		printf("You got smoked matched.\n");
+		match = YOUGOTSMOKED;
 	}
 
 	// Palenque
@@ -391,7 +441,7 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Toum
-	else if (toum_red_count > 2500)
+	else if (toum_red_count > 5000)
 	{
 		printf("Toum matched.\n");
 		match = TOUM;
@@ -472,7 +522,7 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 
 	printf("output: %s\n",outputString);
 
-	if (debug == 0)
+	if (mode == 2)
 	{
 		strcat(tterCommand,outputString);
 		strcat(tterCommand,tterEnd);

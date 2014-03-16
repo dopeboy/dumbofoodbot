@@ -1,5 +1,5 @@
-#ifndef FIND_ME_SOME_TRUCKS_H_INCLUDED
-#define FIND_ME_SOME_TRUCKS_H_INCLUDED
+#ifndef DUMBOFOODBOT_H_INCLUDED
+#define DUMBOFOODBOT_H_INCLUDED
 
 IplImage* convertRGBtoHSV(const IplImage *imageRGB);
 IplImage* chop(CvPoint* point, unsigned int numPoints, const IplImage* capture);
