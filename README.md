@@ -5,4 +5,3 @@ This script uses datalot's dropcam video stream (http://www.datalot.com/dumbo-fo
 
 Still in beta.
 
-Brought to you by https://qhojo.com
