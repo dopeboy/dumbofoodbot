@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
  	IplImage* capture = cvLoadImage(argv[1],CV_LOAD_IMAGE_COLOR);
 	
 	// Let's crop the image to get just the meaningful part of it. These vertices & widths were found manually via GIMP.
-	CvRect cr = {72,304,963-72,707-304};
+	CvRect cr = {197,321,1069-197,708-321};
 	cvSetImageROI(capture, cr);
 	IplImage* cropped = cvCreateImage( cvSize(cr.width,cr.height), capture->depth, capture->nChannels );
 	cvCopy( capture, cropped, 0 );
@@ -75,26 +75,20 @@ int main(int argc, char *argv[])
 		unsigned int numPoints = 0;
 
 		// R0 (lower left)
-		numPoints = 6;
+		numPoints = 4;
 		CvPoint points_r0[numPoints];
 
 		points_r0[0].x=0;
-		points_r0[0].y=12;
+		points_r0[0].y=50;
 
-		points_r0[1].x=80;
-		points_r0[1].y=12;
+		points_r0[1].x=158;
+		points_r0[1].y=26;
 
-		points_r0[2].x=201;
-		points_r0[2].y=34;
+		points_r0[2].x=158;
+		points_r0[2].y=177;
 
-		points_r0[3].x=201;
-		points_r0[3].y=182;
-
-		points_r0[4].x=21;
-		points_r0[4].y=226;
-
-		points_r0[5].x=0;
-		points_r0[5].y=183;
+		points_r0[3].x=0;
+		points_r0[3].y=214;
 
 		region0 = chop(&points_r0[0], numPoints, cropped);
 		memset(file,0,strlen(file));
@@ -103,26 +97,20 @@ int main(int argc, char *argv[])
 		cvSaveImage(file, region0, fileparam);
 
 		// R1 (middle)
-		numPoints = 6;
+		numPoints = 4;
 		CvPoint points_r1[numPoints];
 
-		points_r1[0].x=234;
-		points_r1[0].y=20;
+		points_r1[0].x=190;
+		points_r1[0].y=0;
 
-		points_r1[1].x=346;
-		points_r1[1].y=20;
+		points_r1[1].x=550;
+		points_r1[1].y=65;
 
-		points_r1[2].x=600;
-		points_r1[2].y=86;
+		points_r1[2].x=468;
+		points_r1[2].y=254;
 
-		points_r1[3].x=600;
-		points_r1[3].y=153;
-
-		points_r1[4].x=524;
-		points_r1[4].y=286;
-
-		points_r1[5].x=234;
-		points_r1[5].y=213;
+		points_r1[3].x=190;
+		points_r1[3].y=176;
 
 		region1 = chop(&points_r1[0], numPoints, cropped);
 		memset(file,0,strlen(file));
@@ -131,30 +119,30 @@ int main(int argc, char *argv[])
 		cvSaveImage(file, region1, fileparam);
 
 		// R2 (lower right)
-		numPoints = 7;
+		numPoints = 6;
 		CvPoint points_r2[numPoints];
 
-		points_r2[0].x=751;
-		points_r2[0].y=117;
+		points_r2[0].x=870;
+		points_r2[0].y=138;
 
-		points_r2[1].x=882;
-		points_r2[1].y=145;
+		points_r2[1].x=715;
+		points_r2[1].y=192;
 
-		points_r2[2].x=882;
-		points_r2[2].y=238;
+		points_r2[2].x=557;
+		points_r2[2].y=157;
 
-		points_r2[3].x=474;
-		points_r2[3].y=397;
+		points_r2[3].x=459;
+		points_r2[3].y=323;
 
-		points_r2[4].x=474;
-		points_r2[4].y=336;
+		points_r2[4].x=459;
+		points_r2[4].y=384;
 
-		points_r2[5].x=563;
-		points_r2[5].y=166;
+		points_r2[5].x=870;
+		points_r2[5].y=230;
 
 		// This last vertex needs some work.
-		points_r2[6].x=697;
-		points_r2[6].y=117;
+		//points_r2[6].x=697;
+		//points_r2[6].y=117;
 
 		region2 = chop(&points_r2[0], numPoints, cropped);
 		memset(file,0,strlen(file));
@@ -288,7 +276,7 @@ signed int processRegion(const IplImage* region)
 
 	unsigned int msg_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(27,56,105,0),cvScalar(35,97,237,0),msg);
+  	cvInRangeS(imgHSV,cvScalar(20,32,105,0),cvScalar(35,97,237,0),msg);
 	msg_count = cvCountNonZero(msg);
 	
 	printf("Moo Shuu Grill: %d\n", msg_count);
@@ -300,7 +288,7 @@ signed int processRegion(const IplImage* region)
 	unsigned int mexico_yellow_count = 0;
 	unsigned int mexico_black_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(0,7,110,0),cvScalar(49,74,165,0),mexico1);
+  	cvInRangeS(imgHSV,cvScalar(0,7,110,0),cvScalar(49,105,228,0),mexico1);
 	mexico_yellow_count = cvCountNonZero(mexico1);
   	cvInRangeS(imgHSV,cvScalar(18,8,51,0),cvScalar(234,77,84,0),mexico2);
 	mexico_black_count = cvCountNonZero(mexico2);
@@ -365,7 +353,7 @@ signed int processRegion(const IplImage* region)
 
 	unsigned int toum_red_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(0,112,56,0),cvScalar(254,177,122,0),toum1);
+  	cvInRangeS(imgHSV,cvScalar(0,112,56,0),cvScalar(254,177,151,0),toum1);
 	toum_red_count = cvCountNonZero(toum1);
 
 	printf("Toum (red): %d\n", toum_red_count);
@@ -399,7 +387,7 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Mexico	
-	else if (mexico_black_count > 20000 && mexico_yellow_count > 2000)
+	else if (mexico_black_count > 18000 && mexico_yellow_count > 3000)
 	{
 		printf("Mexico Bvld matched.\n");
 		match = MEXICOBVLD;
@@ -420,7 +408,7 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Mooshu Grill	
-	else if (msg_count > 7000)
+	else if (msg_count > 6000)
 	{
 		printf("Moo Shuu matched.\n");
 		match = MOOSHUGRILL;
@@ -448,7 +436,7 @@ signed int processRegion(const IplImage* region)
 	}
 
 	// Sweet Chili
-	else if (sweetchili_gray_count > 7000)
+	else if (sweetchili_gray_count > 9000)
 	{
 		printf("Sweet Chili matched.\n");
 		match = SWEETCHILINYC;

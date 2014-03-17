@@ -12,4 +12,4 @@ rtmpdump -r "rtmpe://stream-bravo.dropcam.com:1935/nexus" -a "nexus" -f "LNX 11,
 ffmpeg -i lot.flv -an -vcodec png -vframes 1 -ss 00:00:01 -y lot_capture.png
 
 # Step (3)
-./findmesometrucks lot_capture.png 1
+./dumbofoodbot lot_capture.png 1
