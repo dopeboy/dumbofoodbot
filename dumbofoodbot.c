@@ -16,6 +16,7 @@
 #define PALENQUE 7
 #define TOUM 8
 #define SWEETCHILINYC 9
+#define KIMCHI 10
 
 // 0 = just chop
 // 1 = chop and detect
@@ -368,6 +369,21 @@ signed int processRegion(const IplImage* region)
 
 	printf("Sweet Chili (gray): %d\n", sweetchili_gray_count);
 
+	// Kimchi
+	IplImage* kimchi_1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+	IplImage* kimchi_2 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
+
+	unsigned int kimchi_red_count = 0;
+	unsigned int kimchi_yellow_count = 0;
+
+  	cvInRangeS(imgHSV,cvScalar(0,132,128,0),cvScalar(255,225,179,0),kimchi_1);
+	kimchi_red_count = cvCountNonZero(kimchi_1);
+
+  	cvInRangeS(imgHSV,cvScalar(11,22,186,0),cvScalar(50,50,233,0),kimchi_2);
+	kimchi_yellow_count = cvCountNonZero(kimchi_2);
+
+	printf("Kimchi (red) (yellow) : %d %d\n", kimchi_red_count, kimchi_yellow_count);
+
 	signed int match = -1;
 
 	// Now make determinations on whether to match or not
@@ -398,6 +414,13 @@ signed int processRegion(const IplImage* region)
 	{
 		printf("Shorty's matched.\n");
 		match = SHORTYS;
+	}
+
+	// Kimchi Taco
+	else if (kimchi_red_count > 9000 && kimchi_yellow_count > 8000)
+	{
+		printf("Kimchi matched.\n");
+		match = KIMCHI;
 	}
 
 	// Korilla
@@ -458,6 +481,8 @@ signed int processRegion(const IplImage* region)
 	cvReleaseImage(&palenque1);
 	cvReleaseImage(&toum1);
 	cvReleaseImage(&sweetchili1);
+	cvReleaseImage(&kimchi_1);
+	cvReleaseImage(&kimchi_2);
 
 	return match;
 }
@@ -503,6 +528,8 @@ void analyzeRegions(signed int region0_status, signed int region1_status, signed
 				strcat(outputString," @ToumNYC");
 			else if (status[i] == SWEETCHILINYC)
 				strcat(outputString," @sweetchilinyc");
+			else if (status[i] == KIMCHI)
+				strcat(outputString," @kimchitruck");
 		}
 	}
 
