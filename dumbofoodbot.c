@@ -254,7 +254,7 @@ signed int processRegion(const IplImage* region)
 	IplImage* korilla1 = cvCreateImage(cvSize(region->width,region->height), IPL_DEPTH_8U, 1);
 	unsigned int korilla_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(3,76,67,0),cvScalar(16,155,121,0),korilla1);
+  	cvInRangeS(imgHSV,cvScalar(3,74	,67,0),cvScalar(16,155,253,0),korilla1);
 	korilla_count = cvCountNonZero(korilla1);
 	printf("Korilla count: %d\n", korilla_count);
 
@@ -331,10 +331,10 @@ signed int processRegion(const IplImage* region)
 	unsigned int shty_red_count = 0;
 	unsigned int shty_white_count = 0;
 
-  	cvInRangeS(imgHSV,cvScalar(2,20,80,0),cvScalar(234,55,131,0),shty1);
+  	cvInRangeS(imgHSV,cvScalar(0,17,80,0),cvScalar(251,111,131,0),shty1);
 	shty_red_count = cvCountNonZero(shty1);
 
-  	cvInRangeS(imgHSV,cvScalar(0,0,238,0),cvScalar(191,15,255,0),shty2);
+  	cvInRangeS(imgHSV,cvScalar(0,0,158,0),cvScalar(250,21,255,0),shty2);
 	shty_white_count = cvCountNonZero(shty2);
 
 	printf("Shorty's count (red, white): %d %d\n", shty_red_count, shty_white_count);
